@@ -10,12 +10,6 @@ import credentials
 client = zulip.Client(email=credentials.email,
                       api_key=credentials.key,
                       site='recurse.zulipchat.com')
-# Send a private message
-client.send_message({
-    "type": "private",
-    "to": "rose@happyspork.com",
-    "content": "I come not, friends, to steal away your hearts."
-})
 
 theMessage = None
 
@@ -23,13 +17,6 @@ theMessage = None
 class Message():
     def __init__(self, str):
         self
-
-def on_message(msg):
-    names = [d.get('full_name') for d in msg['display_recipient']
-             if d.get('full_name') != 'Accountibot']
-    message = msg['content']
-    sender_name = msg['sender_full_name']
-
 
 
 class ScheduledMessages:
@@ -70,4 +57,26 @@ doctest.testmod()
 # Print each message the user receives
 # This is a blocking call that will run forever
 if __name__ == '__main__':
+
+    sched = ScheduledMessages()
+
+    def on_message(msg):
+        sender_name = msg['sender_full_name']
+        if sender_name == 'Accountibot':
+            return
+
+        names = [d.get('full_name') for d in msg['display_recipient']
+                 if d.get('full_name') != 'Accountibot']
+        message = msg['content']
+
+        sched.schedule(time.time() - 10000, names, message)
+        to_send = sched.get_messages()
+        for _, recips, text in to_send:
+
+            client.send_message({
+                "type": "private",
+                "to": "rose@happyspork.com",
+                "content": text,
+            })
+
     client.call_on_each_message(on_message)
