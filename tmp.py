@@ -2,7 +2,7 @@
 from __future__ import print_function
 
 import zulip
-import sys
+import time
 
 import credentials
 
@@ -30,12 +30,44 @@ def on_message(msg):
     message = msg['content']
     sender_name = msg['sender_full_name']
 
-    print(message, sender_name)
-    print('message sent to:', names)
-    global theMessage
-    theMessage = msg
 
+
+class ScheduledMessages:
+    """
+    >>> sched = ScheduledMessages()
+    >>> sched.schedule(10**20, ['tom'], 'in far future')
+    >>> len(sched.messages)
+    1
+    >>> sched.schedule(1, ['tom'], 'in past')
+    >>> sched.get_messages()
+    [(1, ['tom'], 'in past')]
+    >>> len(sched.messages)
+    1
+
+    """
+    def __init__(self):
+        self.messages = []
+
+    def schedule(self, time, recipients, msg):
+        self.messages.append((time, recipients, msg))
+
+    def get_messages(self):
+        candidates = self.messages
+        self.messages = []
+        to_send = []
+        now = time.time()
+
+        for msg in candidates:
+            if msg[0] < now:
+                to_send.append(msg)
+            else:
+                self.messages.append(msg)
+        return to_send
+
+import doctest
+doctest.testmod()
 
 # Print each message the user receives
 # This is a blocking call that will run forever
-client.call_on_each_message(on_message)
+if __name__ == '__main__':
+    client.call_on_each_message(on_message)
