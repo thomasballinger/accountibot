@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-import zulip
-import time
+import collections
 import threading
+import time
+
+import dateparser
+import zulip
 
 import credentials
 
@@ -12,17 +15,10 @@ client = zulip.Client(email=credentials.email,
                       api_key=credentials.key,
                       site='recurse.zulipchat.com')
 
-theMessage = None
 
-
-class Message():
-    def __init__(self, str):
-        self
-
-
-class ScheduledMessages:
+class MessageScheduler:
     """
-    >>> sched = ScheduledMessages()
+    >>> sched = MessageScheduler()
     >>> sched.schedule(10**20, ['tom'], 'in far future')
     >>> len(sched.messages)
     1
@@ -52,6 +48,31 @@ class ScheduledMessages:
                 self.messages.append(msg)
         return to_send
 
+
+Msg = collections.namedtuple('Msg', ['recipients', 'content'])
+
+
+class MessageSchedule:
+    def __init__(self, time, content):
+        self.time = time
+        self.content = content
+
+    @staticmethod
+    def from_text(text):
+        """
+        Turns a message into a datetime obj and the rest of the message
+
+        >>> MessageSchedule.from_text('10 Foo')
+        MessageSchedule(10, 'Foo')
+        """
+        timepart, content = text.split()
+
+        return MessageSchedule(int(timepart), content)
+
+    def __repr__(self):
+        return 'MessageSchedule({!r}, {!r})'.format(self.time, self.content)
+
+
 import doctest
 doctest.testmod()
 
@@ -59,7 +80,7 @@ doctest.testmod()
 # This is a blocking call that will run forever
 if __name__ == '__main__':
 
-    sched = ScheduledMessages()
+    sched = MessageScheduler()
 
     def on_message(msg):
         sender_name = msg['sender_full_name']
@@ -67,7 +88,7 @@ if __name__ == '__main__':
             return
 
         emails = [d.get('email') for d in msg['display_recipient']
-                 if d.get('email') != 'accounti-bot@students.hackerschool.com']
+                  if d.get('email') != 'accounti-bot@students.hackerschool.com']
         print('we are using these emails:', emails)
         message = msg['content']
 
