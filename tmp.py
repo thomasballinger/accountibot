@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import zulip
 import time
+import threading
 
 import credentials
 
@@ -69,9 +70,13 @@ if __name__ == '__main__':
                  if d.get('full_name') != 'Accountibot']
         message = msg['content']
 
-        sched.schedule(time.time() - 10000, names, message)
+        sched.schedule(time.time() + 5, names, message)
+
+    def send_ready_messages():
+        print('checking for messages to send...')
         to_send = sched.get_messages()
         for _, recips, text in to_send:
+            print('sending message')
 
             client.send_message({
                 "type": "private",
@@ -79,4 +84,13 @@ if __name__ == '__main__':
                 "content": text,
             })
 
+    def set_interval(fn, interval=1):
+        while True:
+            time.sleep(interval)
+            fn()
+
+    t = threading.Thread(target=set_interval,
+                         args=(send_ready_messages, 2))
+    t.daemon = True
+    t.start()
     client.call_on_each_message(on_message)
