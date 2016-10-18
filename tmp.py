@@ -66,11 +66,12 @@ if __name__ == '__main__':
         if sender_name == 'Accountibot':
             return
 
-        names = [d.get('full_name') for d in msg['display_recipient']
-                 if d.get('full_name') != 'Accountibot']
+        emails = [d.get('email') for d in msg['display_recipient']
+                 if d.get('email') != 'accounti-bot@students.hackerschool.com']
+        print('we are using these emails:', emails)
         message = msg['content']
 
-        sched.schedule(time.time() + 5, names, message)
+        sched.schedule(time.time() + 5, emails, message)
 
     def send_ready_messages():
         print('checking for messages to send...')
@@ -80,7 +81,7 @@ if __name__ == '__main__':
 
             client.send_message({
                 "type": "private",
-                "to": "rose@happyspork.com",
+                "to": recips,
                 "content": text,
             })
 
